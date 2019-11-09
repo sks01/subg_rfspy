@@ -13,7 +13,7 @@ bool __xdata subg_rfspy_should_exit;
 void subg_rfspy_main() {
   SLEEP &= ~SLEEP_OSC_PD;
   while( !(SLEEP & SLEEP_XOSC_S) );
-  CLKCON = (CLKCON & ~(CLKCON_CLKSPD | CLKCON_OSC)) | CLKSPD_DIV_1;
+  CLKCON =  0xAA;		//CLKSPD = 6Mhz, TICKSPD = 750Khz - no need to go faster than this, radio frequency is dependent on quartz frequency not on CPU clock
   while (CLKCON & CLKCON_OSC);
   SLEEP |= SLEEP_OSC_PD;
 
@@ -28,7 +28,7 @@ void subg_rfspy_main() {
 
   subg_rfspy_init_finished = true;
 
-  WDCTL = WDCTL_EN;	  // Start watchdog at 1s interval
+  //WDCTL = WDCTL_EN;	  // Start watchdog at 1s interval
 
   while(!subg_rfspy_should_exit) {
     get_command();
