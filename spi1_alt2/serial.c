@@ -132,7 +132,7 @@ void rx1_isr(void) __interrupt URX1_VECTOR
       }
       if (xfer_size > 0) {
         spi_mode = SPI_MODE_XFER;
-		CLKCON =  0xA8;		//some command will be received soon, time to start moving faster; CLKSPD = 24Mhz, TICKSPD = 750Khz
+		CLKCON =  0xAA;		//some command will be received soon, time to start moving faster; CLKSPD = 6Mhz, TICKSPD = 750Khz
       } else {
         spi_mode = SPI_MODE_IDLE;
       }
@@ -182,7 +182,8 @@ void tx1_isr(void) __interrupt UTX1_VECTOR
 
 uint8_t serial_rx_avail()
 {
-  return fifo_count(&input_buffer);
+  //return fifo_count(&input_buffer);
+  return(input_buffer.head - input_buffer.tail);
 }
 
 uint8_t serial_rx_byte()
@@ -190,7 +191,7 @@ uint8_t serial_rx_byte()
   uint8_t s_data;
   if (!serial_data_available) {
     while(!serial_data_available && !subg_rfspy_should_exit) {
-      feed_watchdog();
+      //feed_watchdog();
     }
   }
   s_data = fifo_get(&input_buffer);
@@ -241,7 +242,7 @@ void serial_flush()
   read_timer(&start_time);
   ready_to_send = 1;
   while(!fifo_empty(&output_buffer) && !subg_rfspy_should_exit) {
-    feed_watchdog();
+    //feed_watchdog();
     if (check_elapsed(start_time, FLUSH_TIMEOUT_MS)) {
       break;
     }
@@ -249,7 +250,7 @@ void serial_flush()
 
   // Waiting to finish spi transfer
   while(slave_send_size != 0 && !subg_rfspy_should_exit) {
-    feed_watchdog();
+    //feed_watchdog();
     if (check_elapsed(start_time, FLUSH_TIMEOUT_MS)) {
       break;
     }
