@@ -1,5 +1,11 @@
 # subg_rfspy
 
+# This fork of subg_rfspy is intended only for use with RileyLink hardware. 
+  Change vs. the original:
+  - removed all files & code that is not needed to support RileyLink
+  - reduce CPU frequency from 24Mhz to 6Mhz to reduce power consumption
+  - reduce CPU frequency further to 3Mhz while not processing any commands, also for reducing power consumption
+
 # Building subg_rfspy in Windows
 
 1. install SDCC version >= 3.7.0
