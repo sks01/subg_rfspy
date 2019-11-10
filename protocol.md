@@ -64,7 +64,7 @@ Prints the current version of the software.
 | ------- | -------- | -----------  |
 | 2       | uint8_t  | Command code |
 
-Response: "subg_rfspy 1.0"
+Response: "subg_rfspy x.x"
 
 
 ### Get Packet: 3
@@ -119,26 +119,6 @@ Use this command to update one of the major registers with a desired value. See 
 | value        | uint8_t | Value to set register to. |
 
 Returns 1 on success, 2 on invalid register.
-
-### Reset: 7
-
-Use this command to reset the device.
-
-| data         | size    | Description  |
-| ------------ | ------- | -----------  |
-| 7            | uint8_t | Command code |
-
-No response; client should wait, and then check status after 100ms or so.
-
-### LED: 8
-
-Use this command to manually control the LEDs on the device.
-
-| data         | size    | Description  |
-| ------------ | ------- | -----------  |
-| 8            | uint8_t | Command code |
-| led_num      | uint8_t | LED number (0 = green, 1 = blue) |
-| led_mode     | uint8_t | LED mode (0 = off, 1 = on, 2 = auto) |
 
 ### Read Register: 9
 
