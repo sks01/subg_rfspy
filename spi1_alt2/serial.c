@@ -132,7 +132,7 @@ void rx1_isr(void) __interrupt URX1_VECTOR
       }
       if (xfer_size > 0) {
         spi_mode = SPI_MODE_XFER;
-		CLKCON =  0xAA;		//some command will be received soon, time to start moving faster; CLKSPD = 6Mhz, TICKSPD = 750Khz
+		CLKCON =  0xA9;		//some command will be received soon, time to start moving faster; CLKSPD = 12Mhz, TICKSPD = 750Khz
       } else {
         spi_mode = SPI_MODE_IDLE;
       }

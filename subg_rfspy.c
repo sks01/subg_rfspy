@@ -13,7 +13,7 @@ bool __xdata subg_rfspy_should_exit;
 void subg_rfspy_main() {
   SLEEP &= ~SLEEP_OSC_PD;
   while( !(SLEEP & SLEEP_XOSC_S) );
-  CLKCON =  0xAA;		//CLKSPD = 6Mhz, TICKSPD = 750Khz - no need to go faster than this, radio frequency is dependent on quartz frequency not on CPU clock
+  CLKCON =  0xA9;		//CLKSPD = 12Mhz, TICKSPD = 750Khz - no need to go faster than this, radio frequency is dependent on quartz frequency not on CPU clock
   while (CLKCON & CLKCON_OSC);
   SLEEP |= SLEEP_OSC_PD;
 
