@@ -2,50 +2,22 @@
 
 [![Build Status](https://travis-ci.org/ps2/subg_rfspy.svg?branch=master)](https://travis-ci.org/ps2/subg_rfspy)
 
-## Pre-Requisites for Building subg_rfspy
+# Building subg_rfspy
 
-[sdcc] (http://sdcc.sourceforge.net/) version >= 3.7.0 is required for this build. There is a [docker image](https://hub.docker.com/r/ps2docker/sdcc_docker/) available for this purpose.
+Building under Windows
 
-It's also possible to build it under Windows. The best way to do this is to:
-
-1. install SDCC version 3.7.0
+1. install [sdcc] (http://sdcc.sourceforge.net/) version >= 3.7.0
 2. install Cygwin
 3. use Cygwin to install make
 4. Use cygwin bash to build the project
 
-To install, you'll need [cc-tool](https://github.com/dashesy/cc-tool)
+# Installing
 
-# Building and Installing
-
-```
-make -f Makefile.spi1_alt2 install
-
-```
-
-# Building and Installing using docker
-```
-docker run -v `pwd`:/subg_rfspy  ps2docker/sdcc_docker /bin/sh -c "cd /subg_rfspy; make -f Makefile.spi1_alt2
-cc-tool -n CC1110 --log install.log -ew output/spi1_alt2_RILEYLINK_US_STDLOC/spi1_alt2_RILEYLINK_US_STDLOC.hex
-```
-
-# Radio Frequency Selection
-
-This code defaults to building firmware that is tuned to 916.5 Mhz. You can also build a 'WorldWide' firmware. This changes the default frequency to 868 and tweaks a few other settings.
-
-    make -f Makefile.spi1_alt2 RADIO_LOCALE=WW
+Use TI SmartRF Flash Programmer to burn the .hex image resulting out of build process (in folder "output") 
 
 # Protocol
 
 See [protocol.md](protocol.md)
-
-
-# Addendum
-
-## Serial/Uart Support
-
-Serial support is no longer supported.  See [serial.md](serial.md) for
-historical information.
-
 
 ## Supported Registers
 
