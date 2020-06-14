@@ -11,6 +11,7 @@
 #include "radio.h"
 
 #define RX_FIFO_SIZE 32
+#define RX_FIFO_MASK 0x1F
 #define TX_BUF_SIZE 255
 
 static volatile uint8_t __xdata radio_rx_buf[RX_FIFO_SIZE];
@@ -111,9 +112,15 @@ bool set_encoding_type(EncodingType new_type) {
 }
 
 inline void put_rx(uint8_t data) {
-  if (!fifo_put(&rx_fifo, data)) {
-    radio_rx_fifo_overflow_count++;
-  }
+  //if (!fifo_put(&rx_fifo, data)) {
+  //  radio_rx_fifo_overflow_count++;
+  //}
+	
+	if (rx_fifo.head - rx_fifo.tail == RX_FIFO_SIZE) radio_rx_fifo_overflow_count++;
+	else {
+		rx_fifo.buffer[rx_fifo.head & RX_FIFO_MASK] = data; 
+		rx_fifo.head++;
+	}
 }
 
 void rftxrx_isr(void) __interrupt RFTXRX_VECTOR {
@@ -220,7 +227,7 @@ void send_packet_from_serial(uint8_t channel, uint8_t repeat_count, uint16_t del
     if (send_count > 0 && delay_ms > 0) {
       delay(delay_ms);
     }
-    //feed_watchdog();
+    feed_watchdog();
 
     send_from_tx_buf(channel, preamble_extend_ms);
 
@@ -323,7 +330,7 @@ uint8_t get_packet_and_write_to_serial(uint8_t channel, uint32_t timeout_ms, uin
 
   while(1) {
 
-    //feed_watchdog();
+    feed_watchdog();
 
     // Waiting for isr to put radio bytes into rx_fifo
     if (!fifo_empty(&rx_fifo)) {
@@ -333,6 +340,7 @@ uint8_t get_packet_and_write_to_serial(uint8_t channel, uint32_t timeout_ms, uin
 
       // Send status code
       if (read_idx == 1) {
+        led_set_diagnostic(BlueLED, LEDStateOn);
         serial_tx_byte(RESPONSE_CODE_SUCCESS);
       }
       // First two bytes are rssi and packet #
@@ -382,6 +390,7 @@ uint8_t get_packet_and_write_to_serial(uint8_t channel, uint32_t timeout_ms, uin
     packet_rx_count++;
   }
 
+  led_set_diagnostic(BlueLED, LEDStateOff);
   return rval;
 }
 
