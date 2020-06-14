@@ -6,7 +6,7 @@
 
 Building under Windows
 
-1. install [sdcc] (http://sdcc.sourceforge.net/) version >= 3.7.0
+1. install [sdcc] (http://sdcc.sourceforge.net/) version >= 4.0.2, version between 3.8.0 and 4.0.0 are know to produce an incorrect .hex file.
 2. install Cygwin
 3. use Cygwin to install make
 4. in Cygwin, run this command in the "subg_rfspy" folder: make -f Makefile.spi1_alt2
