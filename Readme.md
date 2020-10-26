@@ -9,9 +9,7 @@ It's also possible to build it under Windows. The best way to do this is to:
 3. use Cygwin to install make
 4. Use cygwin bash to build the project
 
-To install, you'll need [cc-tool](https://github.com/dashesy/cc-tool)
-
-# Building and Installing
+# Building
 
 ```
 make -f Makefile.spi1_alt2 install
