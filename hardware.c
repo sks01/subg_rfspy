@@ -1,4 +1,8 @@
-/* Control a cc1110 for sub-ghz RF comms over uart. */
+/*Changes vs. original 2.2
+- removed led handling routines
+- added debug_putc()
+*/
+
 
 #include <stdint.h>
 #include "hardware.h"
@@ -7,55 +11,32 @@
 #include "timer.h"
 #include "commands.h"
 
-static LEDMode green_mode = 0;
-static LEDMode blue_mode = 0;
-
 mode_registers __xdata tx_registers;
 mode_registers __xdata rx_registers;
 
-void init_leds() {
-	// init LEDS
-	HARDWARE_LED_INIT;       // see hardware.h
-	GREEN_LED_PIN = 0;
-	BLUE_LED_PIN = 0;
+#define debug_bit_t	2		// bit, 470000 BAUD @24Mhz
+#define debug_start	1		// start bit
 
-  led_set_mode(GreenLED, LEDModeOff);
-  led_set_mode(BlueLED, LEDModeOff);
-}
-
-
-void led_set_mode(LEDNumber led, LEDMode new_mode)
+void debug_putc(uint8_t data)
 {
-	if(led == GreenLED){
-		green_mode = new_mode;
-		if(new_mode == LEDModeOn) {
-			GREEN_LED_PIN = LEDStateOn;
-		} else if (new_mode == LEDModeOff) {
-			GREEN_LED_PIN = LEDStateOff;
-		}
-	}
-	else if(led == BlueLED){
-		blue_mode = new_mode;
-		if(new_mode == LEDModeOn) {
-			BLUE_LED_PIN = LEDStateOn;
-		} else if (new_mode == LEDModeOff) {
-			BLUE_LED_PIN = LEDStateOff;
-		}
-	}
-}
+	uint8_t i,j;
 
-void led_set_diagnostic(LEDNumber led, LEDState state)
-{
-	if(led == GreenLED){
-		if(green_mode == LEDModeDiagnostic){
-			GREEN_LED_PIN = state;
-		}
+	P2_1 = 1;
+	i = debug_bit_t*2; while (i--);	//pause between bytes
+	EA=0; 	//do not allow interrupts 
+	P2_1 = 0;
+	i = debug_start; while (i--);	//start bit
+	j=1;
+	while (j != 0)
+	{
+		P2_1 = !!(data & j);
+		j = j << 1;
+		i = debug_bit_t-2; while (i--);
 	}
-	else if(led == BlueLED){
-		if(blue_mode == LEDModeDiagnostic){
-			BLUE_LED_PIN = state;
-		}
-	}
+	j++;		//spend some time to correct length of last bit
+	P2_1 = 1;
+	EA=1; 	//resume interrupts 
+	i = debug_bit_t; while (i--);  //stop bit
 }
 
 uint8_t get_register(uint8_t addr) {
@@ -283,7 +264,7 @@ uint8_t set_register(uint8_t addr, uint8_t value) {
       TEST0 = value;
       break;
     case 0x2D:
-      PA_TABLE1 = value;
+	  PA_TABLE1 = value;
       break;
     case 0x2E:
       PA_TABLE0 = value;

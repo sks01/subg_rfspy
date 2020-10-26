@@ -1,4 +1,8 @@
-/* Control a cc1110 for sub-ghz RF comms over uart. */
+/*Changes vs original 2.2
+- changed CLKCON intialization to a hex value
+- removed leds related routines, there are no leds connected to CC in EmaLink
+- added LED blink at start
+*/
 
 #include <stdint.h>
 #include <stdio.h>
@@ -8,43 +12,45 @@
 #include "timer.h"
 #include "commands.h"
 #include "subg_rfspy.h"
+//#include "fifo.h"
 
 bool __xdata subg_rfspy_init_finished;
 bool __xdata subg_rfspy_should_exit;
 
 void subg_rfspy_main() {
-  // Set the system clock source to HS XOSC and max CPU speed,
-  // ref. [clk]=>[clk_xosc.c]
-  SLEEP &= ~SLEEP_OSC_PD;
-  while( !(SLEEP & SLEEP_XOSC_S) );
-  //CLKCON = (CLKCON & ~(CLKCON_CLKSPD | CLKCON_OSC)) | CLKSPD_DIV_1;
-	CLKCON =  0xA9;		//CLKSPD = 12Mhz, TICKSPD = 750Khz
-  while (CLKCON & CLKCON_OSC);
-  SLEEP |= SLEEP_OSC_PD;
+	SLEEP &= ~SLEEP_OSC_PD;
+	while( !(SLEEP & SLEEP_XOSC_S) );
+	
+	//CLKCON = 0xAB;  		//CLKSPD = 3Mhz, TICKSPD = 750Khz - too slow for receiving packets
+	//CLKCON =  0xAA;		//CLKSPD = 6Mhz, TICKSPD = 750Khz - too slow for receiving packets
+	//CLKCON =  0xA9;		//CLKSPD = 12Mhz, TICKSPD = 750Khz 
+	CLKCON =  0xA8;			//CLKSPD = 24Mhz, TICKSPD = 750Khz
+	while (CLKCON & CLKCON_OSC);
+	SLEEP |= SLEEP_OSC_PD;
 
-  init_leds();
+	//P2DIR |= BIT1;			//activate P2_1 as output for debugging
+	//P2_1=1;				//put for high for USART
 
-  // Global interrupt enable
-  init_timer();
-  EA = 1;
+	init_timer();
+	EA = 1;		  // Global interrupt enable
 
-  configure_serial();
-  configure_radio();
+	configure_serial();
+	configure_radio();
 
-  //LED test
-  GREEN_LED_PIN = 1;
-  delay(100);
-  GREEN_LED_PIN = 0;
-  BLUE_LED_PIN = 1;
-  delay(100);
-  BLUE_LED_PIN = 0;
+	//LED test
+  	GREEN_LED_PIN = 1;
+  	delay(100);
+  	GREEN_LED_PIN = 0;
+  	RED_LED_PIN = 1;
+  	delay(100);
+  	RED_LED_PIN = 0;
 
-  subg_rfspy_init_finished = true;
+	subg_rfspy_init_finished = true;
 
-  // Start watchdog at 1s interval
-  WDCTL = WDCTL_EN;
+	WDCTL = WDCTL_EN;	  // Start watchdog at 1s interval
 
-  while(!subg_rfspy_should_exit) {
-    get_command();
-  }
+	while(!subg_rfspy_should_exit) {
+		get_command();
+	}
+
 }

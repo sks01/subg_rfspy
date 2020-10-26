@@ -1,3 +1,7 @@
+/*Changes vs. original 2.2
+- back to inline to static bool fifo_put()
+*/
+
 
 /* fifo queue for use with interrupt routines.  Size must be power of 2 */
 
@@ -49,7 +53,7 @@ inline uint8_t fifo_peek(fifo_buffer const *b) {
     return 0;
 }
 
-static bool fifo_put(fifo_buffer * b, uint8_t data_byte) {
+inline bool fifo_put(fifo_buffer * b, uint8_t data_byte) {
     bool status = false;        /* return value */
 
     if (b) {

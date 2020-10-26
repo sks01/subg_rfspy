@@ -1,3 +1,13 @@
+/*Changes vs. original 2.2
+- added SPI_BUF_MASK for faster fifo handling
+- faster fifo handling in put_rx() for rx_fifo
+- remove led_set_diagnostic() calls
+- reduce initial TX power to 0dB for Medtronic, probably overwritten by Loop
+*/
+
+/*To do
+- do we need volatile for static fifo_buffer __xdata rx_fifo;?
+*/
 
 #include <stdint.h>
 #include <string.h>
@@ -112,10 +122,6 @@ bool set_encoding_type(EncodingType new_type) {
 }
 
 inline void put_rx(uint8_t data) {
-  //if (!fifo_put(&rx_fifo, data)) {
-  //  radio_rx_fifo_overflow_count++;
-  //}
-	
 	if (rx_fifo.head - rx_fifo.tail == RX_FIFO_SIZE) radio_rx_fifo_overflow_count++;
 	else {
 		rx_fifo.buffer[rx_fifo.head & RX_FIFO_MASK] = data; 
@@ -191,7 +197,6 @@ void rf_isr(void) __interrupt RF_VECTOR {
   {
     RFIF &= ~0x20; // Clear module interrupt flag
   }
-  // Use ”else if” to check and handle other RFIF flags
 
 }
 
@@ -340,7 +345,6 @@ uint8_t get_packet_and_write_to_serial(uint8_t channel, uint32_t timeout_ms, uin
 
       // Send status code
       if (read_idx == 1) {
-        led_set_diagnostic(BlueLED, LEDStateOn);
         serial_tx_byte(RESPONSE_CODE_SUCCESS);
       }
       // First two bytes are rssi and packet #
@@ -390,7 +394,6 @@ uint8_t get_packet_and_write_to_serial(uint8_t channel, uint32_t timeout_ms, uin
     packet_rx_count++;
   }
 
-  led_set_diagnostic(BlueLED, LEDStateOff);
   return rval;
 }
 

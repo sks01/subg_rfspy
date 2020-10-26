@@ -1,3 +1,8 @@
+/*Changes vs. original 2.2
+- removed led_set_mode from cmd_led (no leds used by CC1110 in EmaLink)
+- switch to 1.5Mhz clock in do_cmd (idle clock)
+*/
+
 
 #include <stdint.h>
 #include <stddef.h>
@@ -192,7 +197,6 @@ void cmd_led() {
   uint8_t mode;
   led = serial_rx_byte();
   mode = serial_rx_byte();
-  led_set_mode(led, mode);//0, 1, 2 = Off, On, Auto
   serial_tx_byte(RESPONSE_CODE_SUCCESS);
   serial_flush();
 }
@@ -231,7 +235,6 @@ void cmd_get_statistics()
   serial_flush();
 }
 
-
 CommandHandler __xdata handlers[] = {
   /* 0  */ 0,
   /* 1  */ cmd_get_state,
@@ -253,8 +256,8 @@ CommandHandler __xdata handlers[] = {
 void do_cmd(uint8_t cmd) {
   if (cmd > 0 && cmd < sizeof(handlers)/sizeof(handlers[0])) {
     handlers[cmd]();
-	//CLKCON = 0xAB;  	//command finished, we can slow down now; CLKSPD = 3Mhz, TICKSPD = 750Khz
-	CLKCON = 0xAC;  	//command finished, we can slow down now; CLKSPD = 1.5Mhz, TICKSPD = 750Khz - too slow for receiving the second SPI package, need changes to BLE to send 1 by 1 rather than both at once
+	CLKCON = 0xAC;  	//command finished, we can slow down now; CLKSPD = 1.5Mhz, TICKSPD = 750Khz
+	//CLKCON = 0xAB;  		//CLKSPD = 3Mhz, TICKSPD = 750Khz 
   } else {
     while(serial_rx_avail() > 0) {
       serial_rx_byte();
