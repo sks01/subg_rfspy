@@ -15,8 +15,3 @@ To install, you'll need [cc-tool](https://github.com/dashesy/cc-tool)
 
 ```
 make -f Makefile.spi1_alt2 install
-
-```
-# Protocol
-
-See [protocol.md](protocol.md)
