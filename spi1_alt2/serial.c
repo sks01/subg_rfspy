@@ -1,3 +1,11 @@
+/*Changes vs. original 2.2
+- added SPI_BUF_MASK for faster fifo handling
+- moved to volatile fifo_buffer for faster fifo handling 
+- switch to active clock (24Mhz) in rx1_isr() once an valid packet is received
+- faster fifo handling in rx1_isr() for input_buffer
+- faster fifo handling in serial_rx_avail() for input_buffer
+*/
+
 
 #include <stdint.h>
 #include <time.h>
@@ -9,7 +17,8 @@
 #include "fifo.h"
 #include "timer.h"
 
-#define SPI_BUF_LEN 64
+#define SPI_BUF_LEN 128
+#define SPI_BUF_MASK 0x7F
 #define FLUSH_TIMEOUT_MS 5000
 
 static volatile fifo_buffer __xdata input_buffer;
@@ -103,7 +112,7 @@ void rx1_isr(void) __interrupt URX1_VECTOR
 {
   uint8_t value;
   value = U1DBUF_read;
-
+  
   switch(spi_mode)
   {
     case SPI_MODE_OUT_OF_SYNC:
@@ -132,16 +141,17 @@ void rx1_isr(void) __interrupt URX1_VECTOR
       }
       if (xfer_size > 0) {
         spi_mode = SPI_MODE_XFER;
-		CLKCON =  0xA9;		//some command will be received soon, time to start moving faster; CLKSPD = 12Mhz, TICKSPD = 750Khz
+		//CLKCON =  0xA9;		//some command will be received soon, time to start moving faster; CLKSPD = 12Mhz, TICKSPD = 750Khz
+		CLKCON =  0xA8;		//CLKSPD = 24Mhz, TICKSPD = 750Khz
       } else {
         spi_mode = SPI_MODE_IDLE;
       }
       break;
     case SPI_MODE_XFER:
 		if(xfer_size > 0) {	
-			if  ((uint8_t)(input_buffer.head - input_buffer.tail) < master_send_size)	{		 //fifo_count(&input_buffer) < master_send_size
-				input_buffer.buffer[input_buffer.head % input_buffer.buffer_len] = value; input_buffer.head++;							//fifo_put(&input_buffer, value)
-				if  ((uint8_t)(input_buffer.head - input_buffer.tail) == master_send_size) {		//(fifo_count(&input_buffer) == master_send_size)
+			if  ((uint8_t)(input_buffer.head - input_buffer.tail) < master_send_size)	{		 				//fifo_count(&input_buffer) < master_send_size
+				input_buffer.buffer[input_buffer.head & SPI_BUF_MASK] = value; input_buffer.head++;				//fifo_put(&input_buffer, value)
+				if  ((uint8_t)(input_buffer.head - input_buffer.tail) == master_send_size) {					//(fifo_count(&input_buffer) == master_send_size)
 					master_send_size = 0;
 					serial_data_available = 1;
 				}
@@ -161,7 +171,7 @@ void tx1_isr(void) __interrupt UTX1_VECTOR
   IRCON2 &= ~BIT2; // Clear UTX1IF
   if (spi_mode == SPI_MODE_IDLE) {
     if (ready_to_send) {
-      slave_send_size = fifo_count(&output_buffer); //tell BLE how many bytes you want to send
+      slave_send_size = (output_buffer.head - output_buffer.tail) ; //tell BLE how many bytes you want to send; slave_send_size = fifo_count(&output_buffer);
       U1DBUF_write = slave_send_size;
     } else {
       U1DBUF_write = 0;
@@ -169,8 +179,7 @@ void tx1_isr(void) __interrupt UTX1_VECTOR
   }
   else if (slave_send_size > 0) {
 	  if (output_buffer.head != output_buffer.tail) { 	  //U1DBUF_write = fifo_get(&output_buffer);
-		  U1DBUF_write = output_buffer.buffer[output_buffer.tail % output_buffer.buffer_len];	
-		  output_buffer.tail++;
+		  U1DBUF_write = output_buffer.buffer[output_buffer.tail & SPI_BUF_MASK]; output_buffer.tail++;  
 	  }
 	  else U1DBUF_write = 0x00;	//nothing in buffer but still should have been something ...
 	  //start sending bytes to BLE, one per interrupt
@@ -191,7 +200,7 @@ uint8_t serial_rx_byte()
   uint8_t s_data;
   if (!serial_data_available) {
     while(!serial_data_available && !subg_rfspy_should_exit) {
-      //feed_watchdog();
+      feed_watchdog();
     }
   }
   s_data = fifo_get(&input_buffer);
@@ -242,7 +251,7 @@ void serial_flush()
   read_timer(&start_time);
   ready_to_send = 1;
   while(!fifo_empty(&output_buffer) && !subg_rfspy_should_exit) {
-    //feed_watchdog();
+    feed_watchdog();
     if (check_elapsed(start_time, FLUSH_TIMEOUT_MS)) {
       break;
     }
@@ -250,7 +259,7 @@ void serial_flush()
 
   // Waiting to finish spi transfer
   while(slave_send_size != 0 && !subg_rfspy_should_exit) {
-    //feed_watchdog();
+    feed_watchdog();
     if (check_elapsed(start_time, FLUSH_TIMEOUT_MS)) {
       break;
     }
