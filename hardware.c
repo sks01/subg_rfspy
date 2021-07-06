@@ -25,7 +25,7 @@ void debug_putc(uint8_t data)
 	i = debug_bit_t*2; while (i--);	//pause between bytes
 	EA=0; 	//do not allow interrupts 
 	P2_1 = 0;
-	i = debug_start; while (i--);	//start bit
+	//i = debug_start; while (i--);	//start bit
 	j=1;
 	while (j != 0)
 	{

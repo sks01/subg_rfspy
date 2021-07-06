@@ -131,6 +131,7 @@ inline void put_rx(uint8_t data) {
 
 void rftxrx_isr(void) __interrupt RFTXRX_VECTOR {
   uint8_t d_byte;
+  CLKCON =  0xA8;		//CLKSPD = 24Mhz, TICKSPD = 750Khz
   if (MARCSTATE==MARC_STATE_RX) {
     d_byte = RFD;
     if (rx_len == 0) {
@@ -232,7 +233,7 @@ void send_packet_from_serial(uint8_t channel, uint8_t repeat_count, uint16_t del
     if (send_count > 0 && delay_ms > 0) {
       delay(delay_ms);
     }
-    feed_watchdog();
+    //feed_watchdog();
 
     send_from_tx_buf(channel, preamble_extend_ms);
 
@@ -330,12 +331,14 @@ uint8_t get_packet_and_write_to_serial(uint8_t channel, uint32_t timeout_ms, uin
   rx_len = 0;
   memset((void*)radio_rx_buf, 0x11, RX_FIFO_SIZE);
 
+  CLKCON = 0xAB;  	//slow down now, you just wait for a packet that may never come; CLKSPD = 3Mhz, TICKSPD = 750Khz
+  
   RFST = RFST_SRX;
   while(MARCSTATE!=MARC_STATE_RX);
 
   while(1) {
 
-    feed_watchdog();
+    //feed_watchdog();
 
     // Waiting for isr to put radio bytes into rx_fifo
     if (!fifo_empty(&rx_fifo)) {

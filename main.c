@@ -12,6 +12,7 @@ void rftxrx_isr(void) __interrupt RFTXRX_VECTOR;
 void rf_isr(void) __interrupt RF_VECTOR;
 void rx1_isr(void) __interrupt URX1_VECTOR;
 void tx1_isr(void) __interrupt UTX1_VECTOR;
+void port1_isr(void) __interrupt P1INT_VECTOR;
 
 
 int main(void)

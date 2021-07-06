@@ -56,6 +56,6 @@ void delay(uint32_t msec) {
   uint32_t start_time;
   read_timer(&start_time);
   while(!check_elapsed(start_time, msec)) {
-    feed_watchdog();
+    //feed_watchdog();
   }
 }

@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include "subg_rfspy.h"
 #include "hardware.h"
 #include "serial.h"
 #include "radio.h"
@@ -16,6 +17,7 @@
 #include "timer.h"
 
 uint8_t interrupting_cmd = 0;
+uint8_t reset_status = 0;
 
 // If use_pktlen is 0, then a sentinal value of 0 determines end of packet.
 // If use_pktlen is non-zero, then rx will stop at PKTLEN
@@ -38,6 +40,8 @@ void get_command() {
 void cmd_set_sw_encoding() {
   EncodingType encoding_type;
 
+  reset_status = 1;	//this is the command that BLE executes when testing communication with CC, use it to signal that CC was not restarted after BLE
+  
   encoding_type = serial_rx_byte();
   if (set_encoding_type(encoding_type)) {
     serial_tx_byte(RESPONSE_CODE_SUCCESS);
@@ -189,7 +193,8 @@ void cmd_update_register() {
 
 void cmd_reset() {
   EA = 0;
-  WDCTL = BIT3 | BIT0;
+  WDCTL = BIT3 | BIT1 | BIT0; 	//enabled WDT and set the duration to mninimum. A reset should follow in 1-2ms, there is nothing to clear WDT
+  while(1);						//stay here until WDT resets 
 }
 
 void cmd_led() {
@@ -235,6 +240,13 @@ void cmd_get_statistics()
   serial_flush();
 }
 
+void cmd_get_reset()
+{
+	if (reset_status == 1) serial_tx_byte(RESPONSE_CODE_SUCCESS); //CC1110 was not reset after BLE
+	else serial_tx_byte(RESPONSE_CODE_PARAM_ERROR);
+	serial_flush();
+}
+
 CommandHandler __xdata handlers[] = {
   /* 0  */ 0,
   /* 1  */ cmd_get_state,
@@ -250,14 +262,18 @@ CommandHandler __xdata handlers[] = {
   /* 11 */ cmd_set_sw_encoding,
   /* 12 */ cmd_set_preamble,
   /* 13 */ cmd_reset_radio_config,
-  /* 14 */ cmd_get_statistics
+  /* 14 */ cmd_get_statistics,
+  /* 15 */ cmd_get_reset
 };
 
 void do_cmd(uint8_t cmd) {
   if (cmd > 0 && cmd < sizeof(handlers)/sizeof(handlers[0])) {
+	//in_a_command = true;
     handlers[cmd]();
-	CLKCON = 0xAC;  	//command finished, we can slow down now; CLKSPD = 1.5Mhz, TICKSPD = 750Khz
+	//in_a_command = false;
+	CLKCON = 0xAC;  		//command finished, we can slow down now; CLKSPD = 1.5Mhz, TICKSPD = 750Khz
 	//CLKCON = 0xAB;  		//CLKSPD = 3Mhz, TICKSPD = 750Khz 
+	//CLKCON =  0xA8;		//CLKSPD = 24Mhz, TICKSPD = 750Khz
   } else {
     while(serial_rx_avail() > 0) {
       serial_rx_byte();
